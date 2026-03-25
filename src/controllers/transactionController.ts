@@ -51,11 +51,9 @@ export const depositHandler = async (req: Request, res: Response) => {
       error instanceof Error &&
       error.message.includes("Unable to acquire lock")
     ) {
-      return res
-        .status(409)
-        .json({
-          error: "Transaction already in progress for this phone number",
-        });
+      return res.status(409).json({
+        error: "Transaction already in progress for this phone number",
+      });
     }
     res.status(500).json({ error: "Transaction failed" });
   }
@@ -115,7 +113,6 @@ export const getTransactionHandler = async (req: Request, res: Response) => {
   }
 };
 
-
 export const cancelTransactionHandler = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -129,13 +126,19 @@ export const cancelTransactionHandler = async (req: Request, res: Response) => {
       });
     }
 
-    if (transaction.status !== "pending") {
+    if (transaction.status !== TransactionStatus.Pending) {
       return res.status(400).json({
         error: `Cannot cancel transaction with status '${transaction.status}'`,
       });
     }
 
-    const updatedTransaction = await transactionModel.updateStatus(id, "cancelled" );
+    await transactionModel.updateStatus(id, TransactionStatus.Cancelled);
+    const updatedTransaction = await transactionModel.findById(id);
+    if (!updatedTransaction) {
+      return res.status(500).json({
+        error: "Failed to load transaction after cancel",
+      });
+    }
 
     console.log("Transaction cancelled", {
       transactionId: id,
