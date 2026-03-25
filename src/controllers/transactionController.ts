@@ -8,6 +8,7 @@ import { KYCService } from '../services/kyc/kycService';
 import { addTransactionJob, getJobProgress } from '../queue';
 import { z } from "zod";
 
+// ------------------ Services ------------------
 // Initialize services (will be used in future implementations)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const stellarService = new StellarService();
@@ -147,6 +148,8 @@ export const getTransactionHandler = async (req: Request, res: Response) => {
 if (transaction.status === TransactionStatus.Pending) {
   const createdAt = new Date(transaction.createdAt).getTime();
   const now = Date.now();
+  if ((now - createdAt) / (1000 * 60) > timeoutMinutes) {
+    await transactionModel.updateStatus(id, TransactionStatus.Failed);
 
   const diffMinutes = (now - createdAt) / (1000 * 60);
 
@@ -198,6 +201,9 @@ export const cancelTransactionHandler = async (req: Request, res: Response) => {
       }
     }
 
+    res.json({ message: "Transaction cancelled successfully", transaction: updatedTransaction });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to cancel transaction" });
     return res.json({
       message: "Transaction cancelled successfully",
       transaction: updatedTransaction,
