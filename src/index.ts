@@ -215,6 +215,9 @@ app.use("/api/reports", reportsRoutes);
 app.use("/api/kyc", createKYCRoutes(pool));
 app.use("/sep31", sep31Router);
 
+// SEP-24 Interactive Deposit/Withdrawal Flow
+app.use("/sep24", sep24Router);
+
 app.use(
   (
     err: Error & { type?: string },
